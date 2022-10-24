@@ -2,16 +2,10 @@
 #include "queries.hpp"
 
 #include <chrono>
+#include <fstream>
 #include <iostream>
 
 constexpr size_t trials = 10;
-
-struct BenchResult {
-  std::vector<double> t_scalar;
-  std::vector<double> t_sse;
-  std::vector<double> t_filter;
-  std::vector<double> t_agg;
-};
 
 template <typename F> double time(F &&f) {
   auto t0 = std::chrono::high_resolution_clock::now();
@@ -44,7 +38,8 @@ template <typename T> void print_err(std::vector<T> result) {
   }
 }
 
-template <typename Q> BenchResult bench(const WideTable &table) {
+template <typename Q>
+void bench(const std::string &name, const WideTable &table, std::ofstream &f) {
   std::vector<uint32_t> b(table.n() / 32 + (table.n() % 32 != 0));
 
   typename Q::result_type scalar_result = Q::scalar(table);
@@ -65,25 +60,15 @@ template <typename Q> BenchResult bench(const WideTable &table) {
     print_err(agg_result);
   }
 
-  BenchResult result;
-
   for (size_t t = 0; t < trials; ++t) {
-    result.t_scalar.push_back(time([&] { Q::scalar(table); }));
-  }
+    double t_scalar = time([&] { Q::scalar(table); });
+    double t_sse = time([&] { Q::sse(table); });
+    double t_filter = time([&] { Q::filter(table, b.data()); });
+    double t_agg = time([&] { Q::agg(table, b.data()); });
 
-  for (size_t t = 0; t < trials; ++t) {
-    result.t_sse.push_back(time([&] { Q::sse(table); }));
+    f << name << ',' << t << ',' << t_scalar << ',' << t_sse << ',' << t_filter << ',' << t_agg
+      << std::endl;
   }
-
-  for (size_t t = 0; t < trials; ++t) {
-    result.t_filter.push_back(time([&] { Q::filter(table, b.data()); }));
-  }
-
-  for (size_t t = 0; t < trials; ++t) {
-    result.t_agg.push_back(time([&] { Q::agg(table, b.data()); }));
-  }
-
-  return result;
 }
 
 int main(int argc, char **argv) {
@@ -94,28 +79,17 @@ int main(int argc, char **argv) {
   std::string data_dir = argv[1];
 
   WideTable table = load(data_dir);
+  std::ofstream f("results.csv");
+  f << "Query,Trial,Scalar,SSE,Filter,Agg" << std::endl;
 
-  BenchResult q1_1_result = bench<Q1_1>(table);
-  BenchResult q1_2_result = bench<Q1_2>(table);
-  BenchResult q1_3_result = bench<Q1_3>(table);
-  BenchResult q2_1_result = bench<Q2_1>(table);
-  BenchResult q2_2_result = bench<Q2_2>(table);
-  BenchResult q2_3_result = bench<Q2_3>(table);
+  bench<Q1_1>("Q1.1", table, f);
+  bench<Q1_2>("Q1.2", table, f);
+  bench<Q1_3>("Q1.3", table, f);
+  bench<Q2_1>("Q2.1", table, f);
+  bench<Q2_2>("Q2.2", table, f);
+  bench<Q2_3>("Q2.3", table, f);
 
-  std::cout << q1_1_result.t_scalar.back() << std::endl;
-  std::cout << q1_1_result.t_sse.back() << std::endl;
-  std::cout << q1_1_result.t_filter.back() << std::endl;
-  std::cout << q1_1_result.t_agg.back() << std::endl;
-
-  std::cout << q2_1_result.t_scalar.back() << std::endl;
-  std::cout << q2_1_result.t_sse.back() << std::endl;
-  std::cout << q2_1_result.t_filter.back() << std::endl;
-  std::cout << q2_1_result.t_agg.back() << std::endl;
-
-  std::cout << q2_3_result.t_scalar.back() << std::endl;
-  std::cout << q2_3_result.t_sse.back() << std::endl;
-  std::cout << q2_3_result.t_filter.back() << std::endl;
-  std::cout << q2_3_result.t_agg.back() << std::endl;
+  f.close();
 
   return 0;
 }

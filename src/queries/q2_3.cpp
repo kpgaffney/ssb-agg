@@ -9,11 +9,11 @@
 static uint16_t k_q2_3_mfgr_2221 = encode_p_brand1("MFGR#2221");
 static uint8_t k_europe = encode_region("EUROPE");
 
-void q2_3_agg_chunk(const WideTable &t, size_t begin, size_t end, q2_acc_type &acc) {
+void q2_3_agg_chunk(const WideTable &t, size_t begin, size_t end, std::vector<uint16_t> &acc) {
   acc.reserve(acc.size() + end - begin);
   for (size_t i = begin; i < end; ++i) {
     if (t.p_brand1[i] == k_q2_3_mfgr_2221 && t.s_region[i] == k_europe) {
-      acc[((uint32_t)t.d_year[i] << 16) | t.p_brand1[i]] += t.lo_revenue[i];
+      acc[((t.d_year[i] - 1992) << 10) | t.p_brand1[i]] += t.lo_revenue[i];
     }
   }
 }
@@ -39,9 +39,9 @@ uint16_t q2_3_sse_filter_chunk(const WideTable &t, size_t i) {
 }
 
 Q2_3::result_type Q2_3::scalar(const WideTable &t) {
-  q2_acc_type acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n()), q2_acc_type(),
-      [&](const tbb::blocked_range<size_t> &r, q2_acc_type acc) {
+  std::vector<uint16_t> acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n()), std::vector<uint16_t>(8192),
+      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
         q2_3_agg_chunk(t, r.begin(), r.end(), acc);
         return acc;
       },
@@ -51,9 +51,9 @@ Q2_3::result_type Q2_3::scalar(const WideTable &t) {
 }
 
 Q2_3::result_type Q2_3::sse(const WideTable &t) {
-  q2_acc_type acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n() / 16), q2_acc_type(),
-      [&](const tbb::blocked_range<size_t> &r, q2_acc_type acc) {
+  std::vector<uint16_t> acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n() / 16), std::vector<uint16_t>(8192),
+      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
         acc.reserve(acc.size() + (r.end() - r.begin()));
         for (size_t i = r.begin(); i < r.end(); ++i) {
           size_t j = i * 16;
@@ -62,7 +62,7 @@ Q2_3::result_type Q2_3::sse(const WideTable &t) {
           // Perform the aggregation.
           while (mask != 0) {
             size_t k = __builtin_ctz(mask);
-            acc[((uint32_t)t.d_year[j + k] << 16) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
+            acc[((t.d_year[j + k] - 1992) << 10) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
             mask ^= (1 << k);
           }
         }
@@ -94,15 +94,15 @@ void Q2_3::filter(const WideTable &t, uint32_t *b) {
 }
 
 Q2_3::result_type Q2_3::agg(const WideTable &t, const uint32_t *b) {
-  q2_acc_type acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n() / 32 + (t.n() % 32 != 0)), q2_acc_type(),
-      [&](const tbb::blocked_range<size_t> &r, q2_acc_type acc) {
+  std::vector<uint16_t> acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n() / 32 + (t.n() % 32 != 0)), std::vector<uint16_t>(8192),
+      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
         for (size_t i = r.begin(); i < r.end(); ++i) {
           size_t j = i * 32;
           uint32_t mask = b[i];
           while (mask != 0) {
             size_t k = __builtin_ctz(mask);
-            acc[((uint32_t)t.d_year[j + k] << 16) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
+            acc[((t.d_year[j + k] - 1992) << 10) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
             mask ^= (1 << k);
           }
         }

@@ -14,12 +14,12 @@ std::ostream &operator<<(std::ostream &os, const Q2Row &row) {
   return os;
 }
 
-std::vector<Q2Row> q2_agg_order(const q2_acc_type &acc) {
+std::vector<Q2Row> q2_agg_order(const std::vector<uint16_t> &acc) {
   std::vector<Q2Row> result;
   result.reserve(acc.size());
 
-  for (const auto &[key, sum_lo_revenue] : acc) {
-    result.emplace_back(key >> 16, key & 0xFFFF, sum_lo_revenue);
+  for (size_t i = 0; i < acc.size(); ++i) {
+    result.emplace_back((i >> 10) + 1992, i & 0b1111111111, acc[i]);
   }
 
   std::sort(result.begin(), result.end(), [](const Q2Row &a, const Q2Row &b) {
@@ -29,9 +29,9 @@ std::vector<Q2Row> q2_agg_order(const q2_acc_type &acc) {
   return result;
 }
 
-q2_acc_type agg_merge(q2_acc_type a, const q2_acc_type &b) {
-  for (const auto &[k, v] : b) {
-    a[k] += v;
+std::vector<uint16_t> agg_merge(std::vector<uint16_t> a, const std::vector<uint16_t> &b) {
+  for (size_t i = 0; i < b.size(); ++i) {
+    a[i] += b[i];
   }
   return a;
 }

@@ -4,30 +4,30 @@
 #include <unordered_map>
 
 uint8_t encode_p_mfgr(const std::string &s) {
-  std::regex r("MFGR#(\\d)");
+  std::regex r(R"(MFGR#(\d))");
   std::smatch m;
   if (std::regex_match(s, m, r)) {
-    return std::stoul(m[1]);
+    return std::stoul(m[1]) - 1;
   } else {
     throw std::logic_error("could not encode p_mfgr from " + s);
   }
 }
 
 uint8_t encode_p_category(const std::string &s) {
-  std::regex r("MFGR#(\\d\\d)");
+  std::regex r(R"(MFGR#(\d)(\d))");
   std::smatch m;
   if (std::regex_match(s, m, r)) {
-    return std::stoul(m[1]);
+    return (std::stoul(m[1]) - 1) * 5 + (std::stoul(m[2]) - 1);
   } else {
     throw std::logic_error("could not encode p_category from " + s);
   }
 }
 
 uint16_t encode_p_brand1(const std::string &s) {
-  std::regex r("MFGR#(\\d{3,4})");
+  std::regex r(R"(MFGR#(\d)(\d)(\d{1,2}))");
   std::smatch m;
   if (std::regex_match(s, m, r)) {
-    return std::stoul(m[1]);
+    return ((std::stoul(m[1]) - 1) * 5 + (std::stoul(m[2]) - 1) * 40) + (std::stoul(m[3]) - 1);
   } else {
     throw std::logic_error("could not encode p_brand1 from " + s);
   }
