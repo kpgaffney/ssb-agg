@@ -5,9 +5,13 @@
 
 #include <cstdlib>
 
-uint32_t q1_3_scalar(const WideTable &t);
-uint32_t q1_3_sse(const WideTable &t);
-void q1_3_filter(const WideTable &t, uint32_t *b);
-uint32_t q1_3_agg(const WideTable &t, const uint32_t *b);
+class Q1_3 {
+public:
+  using result_type = uint32_t;
+  static result_type scalar(const WideTable &t);
+  static result_type sse(const WideTable &t);
+  static void filter(const WideTable &t, uint32_t *b);
+  static result_type agg(const WideTable &t, const uint32_t *b);
+};
 
 #endif // SSB_AGG_Q1_3_HPP

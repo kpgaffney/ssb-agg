@@ -1,4 +1,5 @@
 #include "q1_1.hpp"
+#include "q1_common.hpp"
 
 #include <oneapi/tbb.h>
 #include <x86intrin.h>
@@ -39,7 +40,7 @@ uint16_t q1_1_sse_filter_chunk(const WideTable &t, size_t i) {
   return _mm_movemask_epi8(mask_16u8);
 }
 
-uint32_t q1_1_scalar(const WideTable &t) {
+uint32_t Q1_1::scalar(const WideTable &t) {
   return tbb::parallel_reduce(
       tbb::blocked_range<size_t>(0, t.n()), 0,
       [&](const tbb::blocked_range<size_t> &r, uint32_t acc) {
@@ -49,7 +50,7 @@ uint32_t q1_1_scalar(const WideTable &t) {
       std::plus<>());
 }
 
-uint32_t q1_1_sse(const WideTable &t) {
+uint32_t Q1_1::sse(const WideTable &t) {
   uint32_t acc = tbb::parallel_reduce(
       tbb::blocked_range<size_t>(0, t.n() / 16), 0,
       [&](const tbb::blocked_range<size_t> &r, uint32_t acc) {
@@ -75,7 +76,7 @@ uint32_t q1_1_sse(const WideTable &t) {
   return acc;
 }
 
-void q1_1_filter(const WideTable &t, uint32_t *b) {
+void Q1_1::filter(const WideTable &t, uint32_t *b) {
   tbb::parallel_for(tbb::blocked_range<size_t>(0, t.n() / 16),
                     [&](const tbb::blocked_range<size_t> &r) {
                       for (size_t i = r.begin(); i < r.end(); ++i) {
@@ -92,20 +93,4 @@ void q1_1_filter(const WideTable &t, uint32_t *b) {
   }
 }
 
-uint32_t q1_1_agg(const WideTable &t, const uint32_t *b) {
-  return tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n() / 32 + (t.n() % 32 != 0)), 0,
-      [&](const tbb::blocked_range<size_t> &r, uint32_t acc) {
-        for (size_t i = r.begin(); i < r.end(); ++i) {
-          size_t j = i * 32;
-          uint32_t mask = b[i];
-          while (mask != 0) {
-            size_t k = __builtin_ctz(mask);
-            acc += t.lo_extendedprice[j + k] * t.lo_discount[j + k];
-            mask ^= (1 << k);
-          }
-        }
-        return acc;
-      },
-      std::plus<>());
-}
+uint32_t Q1_1::agg(const WideTable &t, const uint32_t *b) { return q1_agg(t, b); }
