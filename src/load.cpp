@@ -28,6 +28,7 @@ struct CustomerData {
 struct DateData {
   uint16_t d_year;
   uint32_t d_yearmonthnum;
+  uint8_t d_yearmonth;
   uint8_t d_month;
   uint8_t d_week;
 };
@@ -90,6 +91,7 @@ WideTable load(const std::string &data_dir) {
     date_map.emplace(key, DateData{
                               .d_year = (uint16_t)std::stoul(line[4]),
                               .d_yearmonthnum = (uint32_t)std::stoul(line[5]),
+                              .d_yearmonth = encode_d_yearmonth(line[6]),
                               .d_month = (uint8_t)std::stoul(line[10]),
                               .d_week = (uint8_t)std::stoul(line[11]),
                           });
@@ -121,6 +123,7 @@ WideTable load(const std::string &data_dir) {
     DateData date_data = date_map.at(std::stoul(line[5]));
     table.d_year.push_back(date_data.d_year);
     table.d_yearmonthnum.push_back(date_data.d_yearmonthnum);
+    table.d_yearmonth.push_back(date_data.d_yearmonth);
     table.d_month.push_back(date_data.d_month);
     table.d_weeknuminyear.push_back(date_data.d_week);
   });

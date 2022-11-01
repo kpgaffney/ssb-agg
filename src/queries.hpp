@@ -7,5 +7,9 @@
 #include "queries/q2_1.hpp"
 #include "queries/q2_2.hpp"
 #include "queries/q2_3.hpp"
+#include "queries/q3_1.hpp"
+#include "queries/q3_2.hpp"
+#include "queries/q3_3.hpp"
+#include "queries/q3_4.hpp"
 
 #endif // SSB_AGG_QUERIES_HPP

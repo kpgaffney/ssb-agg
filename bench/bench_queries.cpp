@@ -40,6 +40,8 @@ template <typename T> void print_err(std::vector<T> result) {
 
 template <typename Q>
 void bench(const std::string &name, const WideTable &table, std::ofstream &f) {
+  std::cout << name << std::endl;
+
   std::vector<uint32_t> b(table.n() / 32 + (table.n() % 32 != 0));
 
   typename Q::result_type scalar_result = Q::scalar(table);
@@ -88,6 +90,10 @@ int main(int argc, char **argv) {
   bench<Q2_1>("Q2.1", table, f);
   bench<Q2_2>("Q2.2", table, f);
   bench<Q2_3>("Q2.3", table, f);
+  bench<Q3_1>("Q3.1", table, f);
+  bench<Q3_2>("Q3.2", table, f);
+  bench<Q3_3>("Q3.3", table, f);
+  bench<Q3_4>("Q3.4", table, f);
 
   f.close();
 

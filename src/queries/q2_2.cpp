@@ -1,73 +1,51 @@
 #include "q2_2.hpp"
 #include "encode.hpp"
+#include "helpers.hpp"
 #include "q2_common.hpp"
 
 #include <oneapi/tbb.h>
 #include <unordered_map>
 #include <x86intrin.h>
 
-uint16_t k_mfgr_2221() {
-  static uint16_t k = encode_p_brand1("MFGR#2221");
-  return k;
+void q2_2_agg_step(const WideTable &t, size_t i, Accumulator &acc) {
+  std::pair<bool, uint64_t> &slot =
+      acc[((t.d_year[i] - 1992) << 3) | ((t.p_brand1[i] - 260) & 0b111)];
+  slot.first = true;
+  slot.second += t.lo_revenue[i];
 }
 
-uint16_t k_mfgr_2228() {
-  static uint16_t k = encode_p_brand1("MFGR#2228");
-  return k;
-}
-
-uint8_t k_asia() {
-  static uint8_t k = encode_region("ASIA");
-  return k;
-}
-
-void q2_2_agg_chunk(const WideTable &t, size_t begin, size_t end, std::vector<uint16_t> &acc) {
-  acc.reserve(acc.size() + end - begin);
+void q2_2_agg_chunk(const WideTable &t, size_t begin, size_t end, Accumulator &acc) {
+  static uint16_t k_mfgr_2221 = encode_p_brand1("MFGR#2221");
+  static uint16_t k_mfgr_2228 = encode_p_brand1("MFGR#2228");
+  static uint8_t k_asia = encode_region("ASIA");
   for (size_t i = begin; i < end; ++i) {
-    if (t.p_brand1[i] >= k_mfgr_2221() && t.p_brand1[i] <= k_mfgr_2228() &&
-        t.s_region[i] == k_asia()) {
-      acc[((t.d_year[i] - 1992) << 10) | t.p_brand1[i]] += t.lo_revenue[i];
+    if (t.p_brand1[i] >= k_mfgr_2221 && t.p_brand1[i] <= k_mfgr_2228 && t.s_region[i] == k_asia) {
+      q2_2_agg_step(t, i, acc);
     }
   }
 }
 
 uint16_t q2_2_sse_filter_chunk(const WideTable &t, size_t i) {
   // Initialize constants.
-  static __m128i k_mfgr_2221_8u16 = _mm_set1_epi16((short)k_mfgr_2221());
-  static __m128i k_mfgr_2228_8u16 = _mm_set1_epi16((short)k_mfgr_2228());
-  static __m128i k_asia_16u8 = _mm_set1_epi8((char)k_asia());
+  static __m128i k_mfgr_2221_8u16 = _mm_set1_epi16((short)encode_p_brand1("MFGR#2221"));
+  static __m128i k_mfgr_2228_8u16 = _mm_set1_epi16((short)encode_p_brand1("MFGR#2228"));
+  static __m128i k_asia_16u8 = _mm_set1_epi8((char)encode_region("ASIA"));
 
   // Compute p_brand1 BETWEEN 'MFGR#2221' AND 'MFGR#2228'.
-  __m128i p_brand1_0_8u16 = _mm_lddqu_si128((__m128i *)&t.p_brand1[i]);
-  __m128i p_brand1_1_8u16 = _mm_lddqu_si128((__m128i *)&t.p_brand1[i + 8]);
-  __m128i p_brand1_mask_0_lb_8u16 =
-      _mm_or_si128(_mm_cmpgt_epi16(p_brand1_0_8u16, k_mfgr_2221_8u16),
-                   _mm_cmpeq_epi16(p_brand1_0_8u16, k_mfgr_2221_8u16));
-  __m128i p_brand1_mask_0_ub_8u16 =
-      _mm_or_si128(_mm_cmplt_epi16(p_brand1_0_8u16, k_mfgr_2228_8u16),
-                   _mm_cmpeq_epi16(p_brand1_0_8u16, k_mfgr_2228_8u16));
-  __m128i p_brand1_mask_0_8u16 = _mm_and_si128(p_brand1_mask_0_lb_8u16, p_brand1_mask_0_ub_8u16);
-  __m128i p_brand1_mask_1_lb_8u16 =
-      _mm_or_si128(_mm_cmpgt_epi16(p_brand1_1_8u16, k_mfgr_2221_8u16),
-                   _mm_cmpeq_epi16(p_brand1_1_8u16, k_mfgr_2221_8u16));
-  __m128i p_brand1_mask_1_ub_8u16 =
-      _mm_or_si128(_mm_cmplt_epi16(p_brand1_1_8u16, k_mfgr_2228_8u16),
-                   _mm_cmpeq_epi16(p_brand1_1_8u16, k_mfgr_2228_8u16));
-  __m128i p_brand1_mask_1_8u16 = _mm_and_si128(p_brand1_mask_1_lb_8u16, p_brand1_mask_1_ub_8u16);
-  __m128i mask_16u8 = _mm_packs_epi16(p_brand1_mask_0_8u16, p_brand1_mask_1_8u16);
+  __m128i mask_16u8 = ge_16u16(&t.p_brand1[i], k_mfgr_2221_8u16);
+  mask_16u8 = _mm_and_si128(mask_16u8, le_16u16(&t.p_brand1[i], k_mfgr_2228_8u16));
 
   // Compute s_region = 'ASIA'.
-  __m128i s_region_16u8 = _mm_lddqu_si128((__m128i *)&t.s_region[i]);
-  mask_16u8 = _mm_and_si128(mask_16u8, _mm_cmpeq_epi8(s_region_16u8, k_asia_16u8));
+  mask_16u8 = _mm_and_si128(mask_16u8, eq_16u8(&t.s_region[i], k_asia_16u8));
 
   // Compact the mask.
   return _mm_movemask_epi8(mask_16u8);
 }
 
 Q2_2::result_type Q2_2::scalar(const WideTable &t) {
-  std::vector<uint16_t> acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n()), std::vector<uint16_t>(8192),
-      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
+  Accumulator acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n()), Accumulator(64),
+      [&](const tbb::blocked_range<size_t> &r, Accumulator acc) {
         q2_2_agg_chunk(t, r.begin(), r.end(), acc);
         return acc;
       },
@@ -77,9 +55,9 @@ Q2_2::result_type Q2_2::scalar(const WideTable &t) {
 }
 
 Q2_2::result_type Q2_2::sse(const WideTable &t) {
-  std::vector<uint16_t> acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n() / 16), std::vector<uint16_t>(8192),
-      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
+  Accumulator acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n() / 16), Accumulator(64),
+      [&](const tbb::blocked_range<size_t> &r, Accumulator acc) {
         acc.reserve(acc.size() + (r.end() - r.begin()));
         for (size_t i = r.begin(); i < r.end(); ++i) {
           size_t j = i * 16;
@@ -88,7 +66,7 @@ Q2_2::result_type Q2_2::sse(const WideTable &t) {
           // Perform the aggregation.
           while (mask != 0) {
             size_t k = __builtin_ctz(mask);
-            acc[((t.d_year[j + k] - 1992) << 10) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
+            q2_2_agg_step(t, j + k, acc);
             mask ^= (1 << k);
           }
         }
@@ -112,24 +90,26 @@ void Q2_2::filter(const WideTable &t, uint32_t *b) {
                     });
 
   // Process the remaining records.
+  static uint16_t k_mfgr_2221 = encode_p_brand1("MFGR#2221");
+  static uint16_t k_mfgr_2228 = encode_p_brand1("MFGR#2228");
+  static uint8_t k_asia = encode_region("ASIA");
   for (size_t i = t.n() / 16 * 16; i < t.n(); ++i) {
-    if (t.p_brand1[i] >= k_mfgr_2221() && t.p_brand1[i] <= k_mfgr_2228() &&
-        t.s_region[i] == k_asia()) {
+    if (t.p_brand1[i] >= k_mfgr_2221 && t.p_brand1[i] <= k_mfgr_2228 && t.s_region[i] == k_asia) {
       b[i / 32] |= (1 << (i % 32));
     }
   }
 }
 
 Q2_2::result_type Q2_2::agg(const WideTable &t, const uint32_t *b) {
-  std::vector<uint16_t> acc = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, t.n() / 32 + (t.n() % 32 != 0)), std::vector<uint16_t>(8192),
-      [&](const tbb::blocked_range<size_t> &r, std::vector<uint16_t> acc) {
+  Accumulator acc = tbb::parallel_reduce(
+      tbb::blocked_range<size_t>(0, t.n() / 32 + (t.n() % 32 != 0)), Accumulator(64),
+      [&](const tbb::blocked_range<size_t> &r, Accumulator acc) {
         for (size_t i = r.begin(); i < r.end(); ++i) {
           size_t j = i * 32;
           uint32_t mask = b[i];
           while (mask != 0) {
             size_t k = __builtin_ctz(mask);
-            acc[((t.d_year[j + k] - 1992) << 10) | t.p_brand1[j + k]] += t.lo_revenue[j + k];
+            q2_2_agg_step(t, j + k, acc);
             mask ^= (1 << k);
           }
         }

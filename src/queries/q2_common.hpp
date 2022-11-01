@@ -1,6 +1,9 @@
 #ifndef SSB_AGG_Q2_COMMON_HPP
 #define SSB_AGG_Q2_COMMON_HPP
 
+#include "helpers.hpp"
+#include "table.hpp"
+
 #include <cstdlib>
 #include <ostream>
 #include <unordered_map>
@@ -15,8 +18,6 @@ struct Q2Row {
   friend std::ostream &operator<<(std::ostream &os, const Q2Row &row);
 };
 
-std::vector<Q2Row> q2_agg_order(const std::vector<uint16_t> &acc);
-
-std::vector<uint16_t> agg_merge(std::vector<uint16_t> a, const std::vector<uint16_t> &b);
+std::vector<Q2Row> q2_agg_order(const Accumulator &acc);
 
 #endif // SSB_AGG_Q2_COMMON_HPP

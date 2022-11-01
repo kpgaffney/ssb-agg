@@ -3,6 +3,17 @@
 #include <regex>
 #include <unordered_map>
 
+uint8_t encode_d_yearmonth(const std::string &s) {
+  static std::unordered_map<std::string, uint8_t> month_dictionary = {
+      {"Jan", 0}, {"Feb", 1}, {"Mar", 2}, {"Apr", 3}, {"May", 4},  {"Jun", 5},
+      {"Jul", 6}, {"Aug", 7}, {"Sep", 8}, {"Oct", 9}, {"Nov", 10}, {"Dec", 11}};
+  auto it = month_dictionary.find(s.substr(0, 3));
+  if (it == month_dictionary.end()) {
+    throw std::logic_error("could not encode yearmonth from " + s);
+  }
+  return (it->second << 3) | (std::stoul(s.substr(3, 4)) - 1992);
+}
+
 uint8_t encode_p_mfgr(const std::string &s) {
   std::regex r(R"(MFGR#(\d))");
   std::smatch m;
@@ -27,7 +38,7 @@ uint16_t encode_p_brand1(const std::string &s) {
   std::regex r(R"(MFGR#(\d)(\d)(\d{1,2}))");
   std::smatch m;
   if (std::regex_match(s, m, r)) {
-    return ((std::stoul(m[1]) - 1) * 5 + (std::stoul(m[2]) - 1) * 40) + (std::stoul(m[3]) - 1);
+    return ((std::stoul(m[1]) - 1) * 5 + (std::stoul(m[2]) - 1)) * 40 + (std::stoul(m[3]) - 1);
   } else {
     throw std::logic_error("could not encode p_brand1 from " + s);
   }

@@ -14,12 +14,13 @@ std::ostream &operator<<(std::ostream &os, const Q2Row &row) {
   return os;
 }
 
-std::vector<Q2Row> q2_agg_order(const std::vector<uint16_t> &acc) {
+std::vector<Q2Row> q2_agg_order(const Accumulator &acc) {
   std::vector<Q2Row> result;
-  result.reserve(acc.size());
 
   for (size_t i = 0; i < acc.size(); ++i) {
-    result.emplace_back((i >> 10) + 1992, i & 0b1111111111, acc[i]);
+    if (acc[i].first) {
+      result.emplace_back((i >> 6) + 1992, (i & 0b111111) + 40, acc[i].second);
+    }
   }
 
   std::sort(result.begin(), result.end(), [](const Q2Row &a, const Q2Row &b) {
@@ -27,11 +28,4 @@ std::vector<Q2Row> q2_agg_order(const std::vector<uint16_t> &acc) {
   });
 
   return result;
-}
-
-std::vector<uint16_t> agg_merge(std::vector<uint16_t> a, const std::vector<uint16_t> &b) {
-  for (size_t i = 0; i < b.size(); ++i) {
-    a[i] += b[i];
-  }
-  return a;
 }

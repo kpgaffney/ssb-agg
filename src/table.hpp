@@ -23,6 +23,7 @@ struct WideTable {
   std::vector<uint8_t> c_region;
   std::vector<uint16_t> d_year;
   std::vector<uint32_t> d_yearmonthnum;
+  std::vector<uint8_t> d_yearmonth;
   std::vector<uint8_t> d_month;
   std::vector<uint8_t> d_weeknuminyear;
 };
