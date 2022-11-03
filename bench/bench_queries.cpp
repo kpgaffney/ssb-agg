@@ -94,6 +94,9 @@ int main(int argc, char **argv) {
   bench<Q3_2>("Q3.2", table, f);
   bench<Q3_3>("Q3.3", table, f);
   bench<Q3_4>("Q3.4", table, f);
+  bench<Q4_1>("Q4.1", table, f);
+  bench<Q4_2>("Q4.2", table, f);
+  bench<Q4_3>("Q4.3", table, f);
 
   f.close();
 

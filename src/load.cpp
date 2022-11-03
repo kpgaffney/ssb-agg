@@ -1,6 +1,7 @@
 #include "load.hpp"
 #include "encode.hpp"
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>

@@ -1,6 +1,7 @@
 #ifndef SSB_AGG_TABLE_HPP
 #define SSB_AGG_TABLE_HPP
 
+#include <cstdint>
 #include <cstdlib>
 #include <vector>
 

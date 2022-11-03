@@ -1,5 +1,6 @@
 #include "q2_common.hpp"
 
+#include <algorithm>
 #include <iomanip>
 
 Q2Row::Q2Row(uint16_t d_year, uint16_t p_brand1, uint32_t sum_lo_revenue)

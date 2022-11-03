@@ -18,6 +18,10 @@ add_library(
         queries/q3_2.hpp queries/q3_2.cpp
         queries/q3_3.hpp queries/q3_3.cpp
         queries/q3_4.hpp queries/q3_4.cpp
+        queries/q4_common.hpp queries/q4_common.cpp
+        queries/q4_1.hpp queries/q4_1.cpp
+        queries/q4_2.hpp queries/q4_2.cpp
+        queries/q4_3.hpp queries/q4_3.cpp
 )
 target_link_libraries(ssb_agg TBB::tbb)
 target_include_directories(ssb_agg PRIVATE .)
