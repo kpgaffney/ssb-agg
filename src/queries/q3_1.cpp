@@ -21,7 +21,7 @@ std::ostream &operator<<(std::ostream &os, const Q3_1Row &row) {
 }
 
 void q3_1_agg_step(const WideTable &t, size_t i, Accumulator &acc) {
-  std::pair<bool, uint64_t> &slot =
+  std::pair<bool, int64_t> &slot =
       acc[(t.c_nation[i] << 8) | (t.s_nation[i] << 3) | (t.d_year[i] - 1992)];
   slot.first = true;
   slot.second += t.lo_revenue[i];

@@ -8,7 +8,7 @@
 #include <x86intrin.h>
 
 void q2_1_agg_step(const WideTable &t, size_t i, Accumulator &acc) {
-  std::pair<bool, uint64_t> &slot =
+  std::pair<bool, int64_t> &slot =
       acc[((t.d_year[i] - 1992) << 6) | ((t.p_brand1[i] - 40) & 0b111111)];
   slot.first = true;
   slot.second += t.lo_revenue[i];

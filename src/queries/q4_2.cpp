@@ -6,7 +6,7 @@
 #include <oneapi/tbb.h>
 #include <x86intrin.h>
 
-Q4_2Row::Q4_2Row(uint16_t d_year, uint8_t s_nation, uint8_t p_category, uint64_t sum_profit)
+Q4_2Row::Q4_2Row(uint16_t d_year, uint8_t s_nation, uint8_t p_category, int64_t sum_profit)
     : d_year(d_year), s_nation(s_nation), p_category(p_category), sum_profit(sum_profit) {}
 
 bool operator==(const Q4_2Row &a, const Q4_2Row &b) {
@@ -21,7 +21,7 @@ std::ostream &operator<<(std::ostream &os, const Q4_2Row &row) {
 }
 
 void q4_2_agg_step(const WideTable &t, size_t i, Accumulator &acc) {
-  std::pair<bool, uint64_t> &slot =
+  std::pair<bool, int64_t> &slot =
       acc[((t.d_year[i] - 1997) << 9) | (t.s_nation[i] << 4) | t.p_category[i]];
   slot.first = true;
   slot.second += t.lo_revenue[i] - t.lo_supplycost[i];

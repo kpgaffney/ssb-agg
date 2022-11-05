@@ -4,7 +4,7 @@
 #include <vector>
 #include <x86intrin.h>
 
-using Accumulator = std::vector<std::pair<bool, uint64_t>>;
+using Accumulator = std::vector<std::pair<bool, int64_t>>;
 
 inline __m128i eq_16u8(const uint8_t *a, __m128i b) {
   __m128i a_8u16 = _mm_lddqu_si128((__m128i *)a);

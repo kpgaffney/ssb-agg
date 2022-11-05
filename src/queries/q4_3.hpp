@@ -7,8 +7,8 @@ struct Q4_3Row {
   uint16_t d_year;
   uint8_t s_city;
   uint16_t p_brand1;
-  size_t sum_profit;
-  Q4_3Row(uint16_t d_year, uint8_t s_city, uint16_t p_brand1, uint64_t sum_profit);
+  int64_t sum_profit;
+  Q4_3Row(uint16_t d_year, uint8_t s_city, uint16_t p_brand1, int64_t sum_profit);
   friend bool operator==(const Q4_3Row &a, const Q4_3Row &b);
   friend std::ostream &operator<<(std::ostream &os, const Q4_3Row &row);
 };

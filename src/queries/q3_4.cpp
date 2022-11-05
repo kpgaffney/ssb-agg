@@ -6,7 +6,7 @@
 #include <x86intrin.h>
 
 void q3_4_agg_step(const WideTable &t, size_t i, Accumulator &acc) {
-  std::pair<bool, uint64_t> &slot = acc[((t.c_city[i] - 230) << 3) | (t.s_city[i] - 230)];
+  std::pair<bool, int64_t> &slot = acc[((t.c_city[i] - 230) << 3) | (t.s_city[i] - 230)];
   slot.first = true;
   slot.second += t.lo_revenue[i];
 }
